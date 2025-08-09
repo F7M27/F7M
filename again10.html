@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>الهجمات السبرانية حول العالم | F7M HACKER TERMINAL</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #050d07;
+            color: #00ff41;
+            font-family: 'Share Tech Mono', 'Cairo', monospace;
+            overflow-x: hidden;
+            width: 100vw;
+            min-height: 100vh;
+        }
+        #matrix {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+        #sidebar {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: 260px;
+            background: #0a1a0aee;
+            border-right: 2px solid #00ff41;
+            box-shadow: 2px 0 40px #00ff4160;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+        }
+        #sidebar h2 {
+            color: #00ff41;
+            margin-bottom: 35px;
+            font-size: 1.5em;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00ff41;
+            font-family: 'Cairo', monospace;
+        }
+        .side-btn {
+            width: 200px;
+            margin: 12px 0;
+            padding: 15px 0;
+            background: #101c10;
+            color: #00ff41;
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s, color 0.2s;
+            box-shadow: 0 0 15px #00ff41a0;
+            text-shadow: 0 0 8px #00ff41;
+        }
+        .side-btn:hover {
+            background: #00ff41;
+            color: #101c10;
+        }
+        #main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+        /* شاشة الترحيب العربية */
+        #arabic-welcome {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #050d07;
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeOut 1s 3s forwards;
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+        #arabic-welcome h1 {
+            font-family: 'Cairo', 'Share Tech Mono', monospace;
+            font-size: 4em;
+            color: #00ff41;
+            text-shadow: 0 0 40px #00ff41, 0 0 12px #fff;
+            margin-bottom: 22px;
+            letter-spacing: 2px;
+            direction: rtl;
+            user-select: none;
+        }
+        #arabic-welcome p {
+            font-family: 'Cairo', 'Share Tech Mono', monospace;
+            font-size: 1.5em;
+            color: #baffc9;
+            text-shadow: 0 0 12px #00ff41;
+            margin-top: 0;
+            margin-bottom: 0;
+            direction: rtl;
+            user-select: none;
+        }
+        #arabic-welcome .hacker-details {
+            margin-top: 40px;
+            color: #00ff41;
+            font-size: 1.2em;
+            text-shadow: 0 0 14px #00ff41;
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 1px;
+        }
+        /* شاشة F7M */
+        #f7m-flash {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+        #f7m-flash h1 {
+            font-size: 8vw;
+            color: #00ff41;
+            text-shadow: 0 0 60px #00ff41, 0 0 120px #00ff41, 0 0 20px #fff;
+            letter-spacing: 40px;
+            animation: flicker 0.15s infinite alternate;
+            user-select: none;
+            margin-bottom: 40px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        @keyframes flicker {
+            from { opacity: 1; filter: blur(0px);}
+            to { opacity: 0.7; filter: blur(2px);}
+        }
+        #terminal-bg {
+            width: 85vw;
+            max-width: 1100px;
+            height: 38vh;
+            background: rgba(10,20,10,0.97);
+            border-radius: 16px;
+            box-shadow: 0 0 60px #00ff41a0, 0 0 120px #00ff4140;
+            padding: 30px 40px;
+            overflow: hidden;
+            font-size: 1.3em;
+            color: #00ff41;
+            font-family: 'Share Tech Mono', monospace;
+            border: 2.5px solid #00ff41;
+            margin: 0 auto;
+            position: relative;
+        }
+        .terminal-line {
+            text-shadow: 0 0 12px #00ff41, 0 0 4px #fff;
+            animation: terminal-glow 1.2s infinite alternate;
+            font-size: 1.1em;
+        }
+        @keyframes terminal-glow {
+            from { text-shadow: 0 0 12px #00ff41, 0 0 4px #fff; }
+            to { text-shadow: 0 0 24px #00ff41, 0 0 12px #fff; }
+        }
+        /* شاشة الدخول */
+        #login {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #050d07;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+        }
+        #login input[type="password"] {
+            padding: 13px;
+            font-size: 1.3em;
+            border: none;
+            border-radius: 7px;
+            background: #101c10;
+            color: #00ff41;
+            margin-bottom: 14px;
+            outline: none;
+            box-shadow: 0 0 14px #00ff41a0;
+        }
+        #login button {
+            padding: 12px 38px;
+            font-size: 1.2em;
+            background: #00ff41;
+            color: #050d07;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            box-shadow: 0 0 14px #00ff41a0;
+            transition: background 0.2s;
+        }
+        #login button:hover {
+            background: #0f0;
+        }
+        #login h2 {
+            margin-bottom: 25px;
+            color: #00ff41;
+            letter-spacing: 2px;
+            text-shadow: 0 0 14px #00ff41;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        /* الهيدر */
+        header {
+            background: #0a1a0a;
+            padding: 30px 0 18px 0;
+            text-align: center;
+            box-shadow: 0 2px 18px #0008;
+            border-bottom: 2.5px solid #00ff41;
+            z-index: 2;
+            position: relative;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            letter-spacing: 2px;
+            color: #00ff41;
+            text-shadow: 0 0 22px #00ff41, 0 0 4px #fff;
+            font-family: 'Cairo', 'Share Tech Mono', monospace;
+        }
+        header p {
+            color: #baffc9;
+            margin: 0;
+            font-size: 1.3em;
+            letter-spacing: 1px;
+            text-shadow: 0 0 8px #00ff41;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        #map {
+            height: 70vh;
+            width: 99vw;
+            border-bottom: 2.5px solid #00ff41;
+            z-index: 1;
+            position: relative;
+            filter: brightness(0.7) contrast(1.2) grayscale(0.2) hue-rotate(80deg);
+            box-shadow: 0 0 60px #00ff41a0 inset;
+            margin-bottom: 20px;
+        }
+        #attack-table {
+            width: 99vw;
+            margin: 20px auto 10px auto;
+            background: #0a1a0aee;
+            border-radius: 12px;
+            box-shadow: 0 2px 32px #00ff4160;
+            color: #00ff41;
+            font-size: 1.1em;
+            direction: ltr;
+            border-collapse: collapse;
+            z-index: 2;
+            position: relative;
+        }
+        #attack-table th, #attack-table td {
+            padding: 12px 14px;
+            border-bottom: 1.5px solid #003b1a;
+            text-align: left;
+        }
+        #attack-table th {
+            background: #101c10;
+            color: #00ff41;
+            text-shadow: 0 0 8px #00ff41;
+            font-size: 1.1em;
+        }
+        #attack-table tr:last-child td {
+            border-bottom: none;
+        }
+        #attack-table tr:hover {
+            background: #003b1a;
+            transition: background 0.2s;
+        }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: #101c10 !important;
+            color: #00ff41 !important;
+            border-radius: 10px;
+            box-shadow: 0 0 18px #00ff41a0;
+        }
+        .leaflet-control-attribution {
+            background: #101c10 !important;
+            color: #00ff41 !important;
+        }
+        .glow {
+            text-shadow: 0 0 14px #00ff41, 0 0 28px #00ff41, 0 0 40px #00ff41;
+        }
+        @media (max-width: 900px) {
+            #sidebar { width: 120px; }
+            #main-content { margin-left: 120px; }
+            #map, #attack-table { width: 98vw; }
+            #arabic-welcome h1 { font-size: 2em; }
+            #f7m-flash h1 { font-size: 12vw; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <!-- شاشة الدخول أولاً -->
+    <div id="login">
+        <h2 class="glow">ACCESS REQUIRED</h2>
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="checkPass()">Login</button>
+        <div id="login-error" style="color:#ff3333;margin-top:10px;"></div>
+    </div>
+    <!-- شاشة F7M مع خلفية أوامر هاكر -->
+    <div id="f7m-flash" style="display:none;">
+        <div id="terminal-bg">
+            <div id="terminal-lines"></div>
+        </div>
+        <h1>F7M</h1>
+    </div>
+    <!-- شاشة الترحيب العربية -->
+    <div id="arabic-welcome" style="display:none;">
+        <h1>الهجمات السبرانية حول العالم</h1>
+        <p>من الممكن أن تكون أنت أحد المعرضين للهجمات</p>
+        <div class="hacker-details">
+            <span>F7M | HACKER TERMINAL | LIVE THREAT INTELLIGENCE</span>
+        </div>
+    </div>
+    <div id="sidebar">
+        <h2>F7M MENU</h2>
+        <button class="side-btn" onclick="scrollToMap()">خريطة الهجمات</button>
+    </div>
+    <div id="main-content" style="display:none;">
+        <header>
+            <h1 class="glow">الهجمات السبرانية حول العالم | CYBER ATTACKS LIVE MAP</h1>
+            <p>
+                <span style="color:#00ff41;">F7M Hackers Terminal</span> | 
+                <span style="color:#ff0033;">تهديدات حية - مراقبة عالمية - ذكاء اصطناعي</span> | 
+                Real-time cyber attacks visualization | 
+                <span style="color:#00ff41;">ferasdev</span> | 
+                <span style="color:#ff0033;">Stay Safe!</span>
+            </p>
+        </header>
+        <div id="map"></div>
+        <table id="attack-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Source</th>
+                    <th>Target</th>
+                    <th>Type</th>
+                    <th>Protocol</th>
+                    <th>Data Size</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th>Threat Level</th>
+                    <th>Country</th>
+                    <th>City</th>
+                    <th>OS</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody id="attack-tbody"></tbody>
+        </table>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Matrix rain effect
+        var c = document.getElementById("matrix");
+        var ctx = c.getContext("2d");
+        c.width = window.innerWidth;
+        c.height = window.innerHeight;
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
+        chars = chars.split("");
+        var font_size = 18;
+        var columns = c.width / font_size;
+        var drops = [];
+        for(var x = 0; x < columns; x++)
+            drops[x] = 1;
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(5,13,7,0.15)";
+            ctx.fillRect(0, 0, c.width, c.height);
+            ctx.fillStyle = "#00ff41";
+            ctx.font = font_size + "px Share Tech Mono";
+            for(var i = 0; i < drops.length; i++) {
+                var text = chars[Math.floor(Math.random()*chars.length)];
+                ctx.fillText(text, i*font_size, drops[i]*font_size);
+                if(drops[i]*font_size > c.height && Math.random() > 0.975)
+                    drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', function(){
+            c.width = window.innerWidth;
+            c.height = window.innerHeight;
+        });
+
+        // أوامر هاكر متوهجة خلف F7M
+        const terminalLines = [
+            "root@f7m:~# nmap -A 192.168.1.1",
+            "root@f7m:~# ssh admin@10.0.0.5",
+            "root@f7m:~# hydra -l root -P pass.txt ssh://172.16.0.2",
+            "root@f7m:~# sqlmap -u 'http://target.com/index.php?id=1' --dbs",
+            "root@f7m:~# ping 8.8.8.8 -c 4",
+            "root@f7m:~# whois google.com",
+            "root@f7m:~# traceroute yahoo.com",
+            "root@f7m:~# nc -lvnp 4444",
+            "root@f7m:~# cat /etc/passwd",
+            "root@f7m:~# ./exploit.sh",
+            "root@f7m:~# msfconsole",
+            "root@f7m:~# sudo apt update && sudo apt upgrade",
+            "root@f7m:~# tail -f /var/log/auth.log",
+            "root@f7m:~# watch -n1 netstat -antup",
+            "root@f7m:~# python3 ddos.py --target 185.76.12.34 --threads 1000",
+            "root@f7m:~# ./scan_network.sh",
+            "root@f7m:~# grep 'Failed password' /var/log/auth.log",
+            "root@f7m:~# curl -I http://target.com",
+            "root@f7m:~# ./monitor_traffic.sh",
+            "root@f7m:~# export PS1='[F7M-HACKER] \\u@\\h:\\w$ '"
+        ];
+        function animateTerminal() {
+            const terminal = document.getElementById('terminal-lines');
+            terminal.innerHTML = '';
+            let shown = [];
+            let i = 0;
+            let interval = setInterval(() => {
+                if (i >= terminalLines.length) i = 0;
+                shown.push(`<div class="terminal-line">${terminalLines[i]}</div>`);
+                if (shown.length > 10) shown.shift();
+                terminal.innerHTML = shown.join('');
+                i++;
+            }, 120);
+            setTimeout(() => clearInterval(interval), 5000);
+        }
+
+        // شاشة الدخول
+        function checkPass() {
+            var pass = document.getElementById('password').value;
+            if (pass === 'ferasdev') {
+                document.getElementById('login').style.display = 'none';
+                // F7M شاشة
+                document.getElementById('f7m-flash').style.display = 'flex';
+                animateTerminal();
+                setTimeout(function(){
+                    document.getElementById('f7m-flash').style.display = 'none';
+                    // شاشة الترحيب العربية
+                    document.getElementById('arabic-welcome').style.display = 'flex';
+                    setTimeout(function(){
+                        document.getElementById('arabic-welcome').style.display = 'none';
+                        document.getElementById('main-content').style.display = 'block';
+                        setupMapAndTable();
+                    }, 4000);
+                }, 5000);
+            } else {
+                document.getElementById('login-error').innerText = 'Wrong password!';
+            }
+        }
+        document.getElementById('password').addEventListener('keydown', function(e){
+            if(e.key === 'Enter') checkPass();
+        });
+
+        // إعداد الخريطة بعد ظهور المحتوى
+        function setupMapAndTable() {
+            var map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://carto.com/">CARTO</a> | &copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // بيانات تجريبية قوية ومفصلة
+            var attacks = [
+                {
+                    src: "New York, USA",
+                    srcIP: "192.168.1.10",
+                    srcOS: "Linux",
+                    srcCountry: "USA",
+                    srcCity: "New York",
+                    srcLat: 40.7128, srcLon: -74.0060,
+                    tgt: "Moscow, Russia",
+                    tgtIP: "185.76.12.34",
+                    tgtOS: "Windows Server",
+                    tgtCountry: "Russia",
+                    tgtCity: "Moscow",
+                    tgtLat: 55.7558, tgtLon: 37.6173,
+                    srcThreat: "Botnet",
+                    tgtThreat: "Critical Infrastructure",
+                    type: "DDoS",
+                    protocol: "UDP",
+                    size: "2.4 GB",
+                    status: "Blocked",
+                    time: "2025-08-09 13:10:22",
+                    threatLevel: "High",
+                    notes: "Massive UDP flood targeting Russian servers. Blocked by firewall. <br><span style='color:#ff0033'>[تهديد عالي]</span>"
+                },
+                {
+                    src: "Tokyo, Japan",
+                    srcIP: "10.0.0.5",
+                    srcOS: "Windows",
+                    srcCountry: "Japan",
+                    srcCity: "Tokyo",
+                    srcLat: 35.6895, srcLon: 139.6917,
+                    tgt: "Berlin, Germany",
+                    tgtIP: "91.198.174.192",
+                    tgtOS: "Linux",
+                    tgtCountry: "Germany",
+                    tgtCity: "Berlin",
+                    tgtLat: 52.5200, tgtLon: 13.4050,
+                    srcThreat: "Phishing Group",
+                    tgtThreat: "Banking",
+                    type: "Phishing",
+                    protocol: "SMTP",
+                    size: "12 MB",
+                    status: "Detected",
+                    time: "2025-08-09 13:11:10",
+                    threatLevel: "Medium",
+                    notes: "Phishing emails detected and quarantined by spam filter. <br><span style='color:#ff0033'>[محاولة اختراق]</span>"
+                },
+                {
+                    src: "London, UK",
+                    srcIP: "172.16.0.2",
+                    srcOS: "macOS",
+                    srcCountry: "UK",
+                    srcCity: "London",
+                    srcLat: 51.5074, srcLon: -0.1278,
+                    tgt: "Riyadh, Saudi Arabia",
+                    tgtIP: "212.26.132.10",
+                    tgtOS: "Windows",
+                    tgtCountry: "Saudi Arabia",
+                    tgtCity: "Riyadh",
+                    tgtLat: 24.7136, tgtLon: 46.6753,
+                    srcThreat: "APT29",
+                    tgtThreat: "Government",
+                    type: "Malware",
+                    protocol: "HTTP",
+                    size: "8.7 MB",
+                    status: "Quarantined",
+                    time: "2025-08-09 13:12:01",
+                    threatLevel: "Critical",
+                    notes: "Malware payload delivered via malicious website. Quarantined. <br><span style='color:#ff0033'>[ملف خبيث]</span>"
+                },
+                {
+                    src: "Paris, France",
+                    srcIP: "185.12.34.56",
+                    srcOS: "Linux",
+                    srcCountry: "France",
+                    srcCity: "Paris",
+                    srcLat: 48.8566, srcLon: 2.3522,
+                    tgt: "Dubai, UAE",
+                    tgtIP: "94.200.200.200",
+                    tgtOS: "Windows",
+                    tgtCountry: "UAE",
+                    tgtCity: "Dubai",
+                    tgtLat: 25.2048, tgtLon: 55.2708,
+                    srcThreat: "Ransomware Gang",
+                    tgtThreat: "Enterprise",
+                    type: "Ransomware",
+                    protocol: "SMB",
+                    size: "1.1 GB",
+                    status: "Failed",
+                    time: "2025-08-09 13:12:45",
+                    threatLevel: "High",
+                    notes: "Ransomware attempt failed due to patched SMB vulnerability. <br><span style='color:#ff0033'>[محاولة فدية]</span>"
+                },
+                {
+                    src: "Beijing, China",
+                    srcIP: "203.0.113.1",
+                    srcOS: "Linux",
+                    srcCountry: "China",
+                    srcCity: "Beijing",
+                    srcLat: 39.9042, srcLon: 116.4074,
+                    tgt: "San Francisco, USA",
+                    tgtIP: "104.16.132.229",
+                    tgtOS: "Linux",
+                    tgtCountry: "USA",
+                    tgtCity: "San Francisco",
+                    tgtLat: 37.7749, tgtLon: -122.4194,
+                    srcThreat: "SQLi Bot",
+                    tgtThreat: "E-Commerce",
+                    type: "SQL Injection",
+                    protocol: "TCP",
+                    size: "3.2 MB",
+                    status: "Blocked",
+                    time: "2025-08-09 13:13:10",
+                    threatLevel: "Medium",
+                    notes: "SQL injection attack blocked by WAF. <br><span style='color:#ff0033'>[حقن قواعد بيانات]</span>"
+                },
+                {
+                    src: "Seoul, South Korea",
+                    srcIP: "203.0.113.2",
+                    srcOS: "Windows",
+                    srcCountry: "South Korea",
+                    srcCity: "Seoul",
+                    srcLat: 37.5665, srcLon: 126.9780,
+                    tgt: "Madrid, Spain",
+                    tgtIP: "82.98.160.10",
+                    tgtOS: "Linux",
+                    tgtCountry: "Spain",
+                    tgtCity: "Madrid",
+                    tgtLat: 40.4168, tgtLon: -3.7038,
+                    srcThreat: "Brute Force Bot",
+                    tgtThreat: "Cloud Server",
+                    type: "Brute Force",
+                    protocol: "SSH",
+                    size: "900 KB",
+                    status: "Detected",
+                    time: "2025-08-09 13:13:55",
+                    threatLevel: "Low",
+                    notes: "Multiple SSH login attempts detected and source IP blacklisted. <br><span style='color:#ff0033'>[هجوم تخمين كلمات مرور]</span>"
+                }
+            ];
+
+            // رسم الهجمات على الخريطة
+            attacks.forEach(function(a, i) {
+                // خط بين المصدر والهدف
+                var line = L.polyline([[a.srcLat, a.srcLon], [a.tgtLat, a.tgtLon]], {
+                    color: a.threatLevel === "Critical" ? "#ff0033" : (a.threatLevel === "High" ? "#ffae00" : "#00ff41"),
+                    weight: 3.5,
+                    opacity: 0.92,
+                    dashArray: '6, 8'
+                }).addTo(map);
+
+                // دائرة المصدر (أحمر هاكر)
+                L.circleMarker([a.srcLat, a.srcLon], {
+                    radius: 12,
+                    color: '#ff0033',
+                    fillColor: '#ff0033',
+                    fillOpacity: 0.97
+                }).addTo(map)
+                .bindPopup(
+                    `<b class="glow">Source:</b> ${a.src} <br>
+                    <b>IP:</b> ${a.srcIP} <br>
+                    <b>OS:</b> ${a.srcOS} <br>
+                    <b>Country:</b> ${a.srcCountry} <br>
+                    <b>City:</b> ${a.srcCity} <br>
+                    <b>Threat Actor:</b> ${a.srcThreat} <br>
+                    <b>Type:</b> ${a.type}<br>
+                    <b>Protocol:</b> ${a.protocol}<br>
+                    <b>Data Size:</b> ${a.size}<br>
+                    <b>Status:</b> ${a.status}<br>
+                    <b>Time:</b> ${a.time}<br>
+                    <b>Threat Level:</b> ${a.threatLevel}<br>
+                    <b>Notes:</b> ${a.notes}`
+                );
+
+                // دائرة الهدف (أخضر هاكر)
+                L.circleMarker([a.tgtLat, a.tgtLon], {
+                    radius: 12,
+                    color: '#00ff41',
+                    fillColor: '#00ff41',
+                    fillOpacity: 0.97
+                }).addTo(map)
+                .bindPopup(
+                    `<b class="glow">Target:</b> ${a.tgt} <br>
+                    <b>IP:</b> ${a.tgtIP} <br>
+                    <b>OS:</b> ${a.tgtOS} <br>
+                    <b>Country:</b> ${a.tgtCountry} <br>
+                    <b>City:</b> ${a.tgtCity} <br>
+                    <b>Target Type:</b> ${a.tgtThreat} <br>
+                    <b>Type:</b> ${a.type}<br>
+                    <b>Protocol:</b> ${a.protocol}<br>
+                    <b>Data Size:</b> ${a.size}<br>
+                    <b>Status:</b> ${a.status}<br>
+                    <b>Time:</b> ${a.time}<br>
+                    <b>Threat Level:</b> ${a.threatLevel}<br>
+                    <b>Notes:</b> ${a.notes}`
+                );
+            });
+
+            // تعبئة الجدول
+            var tbody = document.getElementById('attack-tbody');
+            attacks.forEach(function(a, i){
+                var tr = document.createElement('tr');
+                tr.innerHTML = `<td>${i+1}</td>
+                    <td><span title="IP: ${a.srcIP} | OS: ${a.srcOS}">${a.src}</span></td>
+                    <td><span title="IP: ${a.tgtIP} | OS: ${a.tgtOS}">${a.tgt}</span></td>
+                    <td>${a.type}</td>
+                    <td>${a.protocol}</td>
+                    <td>${a.size}</td>
+                    <td>${a.status}</td>
+                    <td>${a.time}</td>
+                    <td style="color:${a.threatLevel==='Critical'?'#ff0033':(a.threatLevel==='High'?'#ffae00':'#00ff41')};font-weight:bold">${a.threatLevel}</td>
+                    <td>${a.tgtCountry}</td>
+                    <td>${a.tgtCity}</td>
+                    <td>${a.tgtOS}</td>
+                    <td>${a.notes}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // زر الخريطة
+        function scrollToMap() {
+            document.getElementById('main-content').scrollIntoView({behavior:'smooth'});
+        }
+    </script>
+</body>
+</html>
